@@ -123,7 +123,7 @@ class _Play_MusicState extends State<Play_Music> {
                                   height: 10,
                                 ),
                                 Text(
-                                  "yousuf bin al azhiri",
+                                  "Yousuf Bin Al Azhiri",
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.7),
                                     fontSize: 10,
