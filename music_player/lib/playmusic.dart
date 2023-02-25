@@ -3,9 +3,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:music_player/music.dart';
+import 'package:audioplayers/audioplayers.dart';
 
-class Play_Music extends StatelessWidget {
+class Play_Music extends StatefulWidget {
   const Play_Music({super.key});
+
+  @override
+  State<Play_Music> createState() => _Play_MusicState();
+}
+
+class _Play_MusicState extends State<Play_Music> {
+  final audioPlayer = AudioPlayer();
+  bool isPlaying = false;
+  Duration duration = Duration.zero;
+  Duration position = Duration.zero;
+  @override
+  void initState() {
+    super.initState();
+
+    audioPlayer.onPlayerStateChanged.listen((state) {
+      setState(() {
+        isPlaying = state == PlayerState.playing;
+      });
+    });
+    audioPlayer.onDurationChanged.listen((newDuration) {
+      setState(() {
+        duration = newDuration;
+      });
+    });
+
+    audioPlayer.onPositionChanged.listen((newPosition) {
+      setState(() {
+        position = newPosition;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    audioPlayer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +75,8 @@ class Play_Music extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 50.0, horizontal: 20.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -74,7 +113,7 @@ class Play_Music extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Sura Yeasin",
+                                  "All-Sura",
                                   style: TextStyle(
                                       color: Colors.white.withOpacity(0.9),
                                       fontSize: 24,
@@ -84,7 +123,7 @@ class Play_Music extends StatelessWidget {
                                   height: 10,
                                 ),
                                 Text(
-                                  " hafez saleh ahmed takrm",
+                                  "yousuf bin al azhiri",
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.7),
                                     fontSize: 10,
@@ -109,9 +148,13 @@ class Play_Music extends StatelessWidget {
                         children: [
                           Slider(
                             min: 0,
-                            max: 100,
-                            value: 40,
-                            onChanged: (value) {},
+                            max: duration.inSeconds.toDouble(),
+                            value: position.inSeconds.toDouble(),
+                            onChanged: (value) async {
+                              final position = Duration(seconds: value.toInt());
+                              await audioPlayer.seek(position);
+                              await audioPlayer.resume();
+                            },
                             activeColor: Colors.white,
                             inactiveColor: Colors.white,
                           ),
@@ -121,14 +164,14 @@ class Play_Music extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "02.05",
+                                  formatTime(position),
                                   style: TextStyle(
                                       color: Colors.white.withOpacity(0.6),
                                       fontWeight: FontWeight.w500,
                                       fontSize: 16),
                                 ),
                                 Text(
-                                  "04.00",
+                                  formatTime(duration - position),
                                   style: TextStyle(
                                       color: Colors.white.withOpacity(0.6),
                                       fontWeight: FontWeight.w500,
@@ -155,29 +198,20 @@ class Play_Music extends StatelessWidget {
                             color: Colors.white,
                             size: 30,
                           ),
-                          // Container(
-                          //   height: 55,
-                          //   width: 55,
-                          //   decoration: BoxDecoration(
-                          //     color: Colors.white,
-                          //     borderRadius: BorderRadius.circular(30),
-                          //   ),
-                          //   child: Center(
-                          //     child: Icon(
-                          //       CupertinoIcons.play_arrow_solid,
-                          //       color: Color(0xff31314f),
-                          //       size: 32,
-                          //     ),
-                          //   ),
-                          // ),
-
-                          const CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 30,
-                            child: Icon(
-                              CupertinoIcons.play_arrow_solid,
-                              color: Colors.black,
-                              size: 32,
+                          CircleAvatar(
+                            radius: 35,
+                            child: IconButton(
+                              onPressed: () async {
+                                if (isPlaying) {
+                                  await audioPlayer.pause();
+                                } else {
+                                  await audioPlayer
+                                      .play(AssetSource("Sura.m4a"));
+                                }
+                              },
+                              icon: Icon(
+                                  isPlaying ? Icons.pause : Icons.play_arrow),
+                              iconSize: 50,
                             ),
                           ),
                           const Icon(
@@ -202,4 +236,16 @@ class Play_Music extends StatelessWidget {
       ),
     );
   }
+}
+
+String formatTime(Duration duration) {
+  String twoDigits(int n) => n.toString().padLeft(2, "0");
+  final hours = twoDigits(duration.inHours);
+  final minute = twoDigits(duration.inMinutes.remainder(60));
+  final seconds = twoDigits(duration.inSeconds.remainder(60));
+  return [
+    if (duration.inHours > 0) hours,
+    minute,
+    seconds,
+  ].join(":");
 }
